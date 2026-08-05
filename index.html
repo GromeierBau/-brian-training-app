@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827"><link rel="manifest" href="manifest.webmanifest">
+<title>Brians Training</title>
+<style>
+:root{--bg:#f3f4f6;--card:#fff;--ink:#111827;--muted:#6b7280;--line:#e5e7eb;--accent:#ef4444}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--ink)}
+.app{max-width:720px;margin:auto;min-height:100vh;padding-bottom:76px}header{position:sticky;top:0;z-index:3;background:#111827;color:#fff;padding:18px}
+header h1{margin:0;font-size:23px}header p{margin:4px 0 0;color:#d1d5db;font-size:14px}main{padding:15px}
+.card{background:#fff;border-radius:18px;padding:15px;margin-bottom:14px;box-shadow:0 4px 18px #0000000f}.hero{background:linear-gradient(135deg,#111827,#374151);color:#fff}
+.big{font-size:27px;font-weight:800;margin:7px 0}.muted{color:var(--muted)}.between{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.btn{border:0;border-radius:13px;padding:11px 13px;background:#111827;color:#fff;font-weight:750}.btn.red{background:#ef4444}.btn.green{background:#16a34a}.btn.gray{background:#e5e7eb;color:#111827}.btn.small{padding:7px 9px;font-size:13px}
+.days{display:grid;grid-template-columns:1fr 1fr;gap:9px}.day{border:2px solid var(--line);border-radius:15px;padding:12px;background:#fff;text-align:left}.day.active{border-color:var(--accent)}
+.day b{display:block;margin-bottom:4px}.exercise{overflow:hidden;padding:0}.exercise img{width:100%;height:180px;object-fit:cover;background:#ddd}.body{padding:14px}
+.pill{display:inline-block;border-radius:999px;padding:6px 10px;background:#fee2e2;color:#991b1b;font-size:12px;font-weight:800}
+.grid{display:grid;grid-template-columns:42px 1fr 1fr 52px;gap:7px;align-items:center;margin:8px 0}
+input,textarea{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:9px}textarea{min-height:58px}.head{font-size:12px;color:var(--muted);font-weight:800}
+.done{background:#dcfce7!important;color:#166534!important}nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);z-index:4}
+nav div{max-width:720px;margin:auto;display:grid;grid-template-columns:repeat(4,1fr)}nav button{border:0;background:#fff;padding:13px 3px;color:var(--muted);font-size:12px}nav button.active{color:var(--accent);font-weight:800}
+.hidden{display:none!important}.history{padding:11px 0;border-bottom:1px solid var(--line)}.notice{background:#fef3c7;color:#92400e;padding:11px;border-radius:12px;font-size:14px}
+</style></head>
+<body><div class="app"><header><h1>Brians Training</h1><p>Gewichte, Wiederholungen und Fortschritt</p></header><main>
+<section id="home"><div class="card hero"><span class="pill">Nächster Trainingstag</span><div id="next" class="big"></div><div id="count"></div><button class="btn red" style="margin-top:14px" onclick="startNext()">Training starten</button></div>
+<div class="card"><div class="between"><h2 style="margin:0">Trainingsplan</h2><button class="btn gray small" onclick="resetPlan()">Reset</button></div><div id="days" class="days" style="margin-top:12px"></div></div>
+<div class="card"><h2 style="margin-top:0">Hinweis</h2><div class="notice">Gewicht so wählen, dass noch 1–2 saubere Wiederholungen möglich wären. Technik vor Ego.</div></div></section>
+<section id="workout" class="hidden"><div class="card hero"><div class="between"><div><div style="color:#d1d5db">Aktuelles Training</div><div id="title" class="big"></div></div><button class="btn gray small" onclick="cancel()">Abbrechen</button></div></div><div id="list"></div><button class="btn green" style="width:100%" onclick="finish()">Training speichern</button></section>
+<section id="history" class="hidden"><div class="card"><h2 style="margin-top:0">Verlauf</h2><div id="historyList"></div></div></section>
+<section id="records" class="hidden"><div class="card"><h2 style="margin-top:0">Rekorde</h2><div id="recordsList"></div></div></section>
+</main></div>
+<nav><div><button class="active" onclick="show('home',this)">Start</button><button onclick="show('workout',this)">Training</button><button onclick="show('history',this)">Verlauf</button><button onclick="show('records',this)">Rekorde</button></div></nav>
+<script>
+const defaults=[
+{name:"Tag 1 – Brust + Bizeps",exercises:[
+{name:"Brustpresse",muscle:"Brust, Schulter, Trizeps",sets:4,reps:"8–12"},
+{name:"Schrägbank-Brustpresse",muscle:"Obere Brust",sets:3,reps:"8–12"},
+{name:"Butterfly",muscle:"Brust",sets:3,reps:"12–15"},
+{name:"Scott-Curls",muscle:"Bizeps",sets:3,reps:"10–12"},
+{name:"Hammercurls",muscle:"Bizeps, Unterarm",sets:3,reps:"10–12"}]},
+{name:"Tag 2 – Rücken + Trizeps",exercises:[
+{name:"Hammer Strength Lat Pulldown",muscle:"Latissimus, Bizeps",sets:4,reps:"8–12",img:"assets/lat_pulldown.jpg"},
+{name:"Star Trac Row",muscle:"Mittlerer Rücken",sets:4,reps:"8–12",img:"assets/row.jpg"},
+{name:"Cybex VR3 Row",muscle:"Oberer und mittlerer Rücken",sets:3,reps:"10–12",img:"assets/cybex_row.jpg"},
+{name:"Reverse Butterfly",muscle:"Hintere Schulter",sets:3,reps:"12–15",img:"assets/reverse_butterfly.jpg"},
+{name:"Trizepsdrücken",muscle:"Trizeps",sets:3,reps:"10–15"},
+{name:"Überkopf-Trizeps",muscle:"Trizeps",sets:3,reps:"10–12"}]},
+{name:"Tag 3 – Beine + Bauch",exercises:[
+{name:"Cybex Squat Press",muscle:"Beine, Gesäß",sets:4,reps:"8–12",img:"assets/squat_press.jpg"},
+{name:"Leg Extension",muscle:"Quadrizeps",sets:3,reps:"10–12",img:"assets/leg_extension.jpg"},
+{name:"Seated Leg Curl",muscle:"Beinbeuger",sets:3,reps:"10–12",img:"assets/leg_curl.jpg"},
+{name:"Wadenheben",muscle:"Waden",sets:4,reps:"12–15",img:"assets/calf_raise.jpg"},
+{name:"Bauch",muscle:"Bauch",sets:3,reps:"12–20"}]},
+{name:"Tag 4 – Schultern + Arme",exercises:[
+{name:"Schulterpresse",muscle:"Schulter, Trizeps",sets:4,reps:"8–12"},
+{name:"Seitheben",muscle:"Seitliche Schulter",sets:3,reps:"12–15"},
+{name:"Reverse Butterfly",muscle:"Hintere Schulter",sets:3,reps:"12–15",img:"assets/reverse_butterfly.jpg"},
+{name:"Scott-Curls",muscle:"Bizeps",sets:3,reps:"10–12"},
+{name:"Kabelcurls",muscle:"Bizeps",sets:3,reps:"10–12"},
+{name:"Trizepsdrücken",muscle:"Trizeps",sets:3,reps:"10–12"}]}];
+let plan=JSON.parse(localStorage.getItem("btPlan")||"null")||defaults;
+let history=JSON.parse(localStorage.getItem("btHistory")||"[]");
+let nextDay=Number(localStorage.getItem("btNext")||0), active=null;
+function save(){localStorage.setItem("btPlan",JSON.stringify(plan));localStorage.setItem("btHistory",JSON.stringify(history));localStorage.setItem("btNext",nextDay)}
+function renderHome(){next.textContent=plan[nextDay].name;count.textContent=plan[nextDay].exercises.length+" Übungen";days.innerHTML="";
+plan.forEach((d,i)=>{let b=document.createElement("button");b.className="day"+(i===nextDay?" active":"");b.innerHTML="<b>"+d.name+"</b><span class=muted>"+d.exercises.length+" Übungen</span>";b.onclick=()=>start(i);days.appendChild(b)})}
+function startNext(){start(nextDay)}function start(i){active={dayIndex:i,date:new Date().toISOString(),exercises:plan[i].exercises.map(e=>({...e,note:"",doneSets:Array.from({length:e.sets},()=>({kg:"",reps:"",done:false}))}))};renderWorkout();show("workout",document.querySelectorAll("nav button")[1])}
+function last(name){for(let i=history.length-1;i>=0;i--){let e=history[i].exercises.find(x=>x.name===name);if(e)return e}return null}
+function renderWorkout(){if(!active){title.textContent="Kein Training aktiv";list.innerHTML='<div class="card">Bitte auf Start einen Trainingstag auswählen.</div>';return}
+title.textContent=plan[active.dayIndex].name;list.innerHTML="";
+active.exercises.forEach((e,ei)=>{let old=last(e.name),c=document.createElement("div");c.className="card exercise";c.innerHTML=(e.img?'<img src="'+e.img+'">':'')+'<div class="body"><div class="between"><div><h3 style="margin:0">'+e.name+'</h3><div class="muted">'+e.muscle+'</div></div><span class="pill">'+e.sets+' × '+e.reps+'</span></div><div class="muted" style="margin:10px 0">'+(old?'Letztes Mal: '+old.doneSets.map(s=>(s.kg||"-")+' kg × '+(s.reps||"-")).join(" · "):"Noch kein Verlauf")+'</div><div class="grid head"><div>Satz</div><div>kg</div><div>Wdh.</div><div>OK</div></div>'+e.doneSets.map((s,si)=>'<div class="grid"><div>'+(si+1)+'</div><input inputmode="decimal" value="'+s.kg+'" onchange="setVal('+ei+','+si+',\'kg\',this.value)"><input inputmode="numeric" value="'+s.reps+'" onchange="setVal('+ei+','+si+',\'reps\',this.value)"><button class="btn small '+(s.done?'done gray':'')+'" onclick="toggle('+ei+','+si+')">'+(s.done?'✓':'OK')+'</button></div>').join("")+'<label class="muted">Geräteeinstellung / Notiz<textarea onchange="active.exercises['+ei+'].note=this.value">'+(e.note||"")+'</textarea></label></div>';list.appendChild(c)})}
+function setVal(e,s,k,v){active.exercises[e].doneSets[s][k]=v}function toggle(e,s){active.exercises[e].doneSets[s].done=!active.exercises[e].doneSets[s].done;renderWorkout()}
+function finish(){if(!active)return;history.push(active);nextDay=(active.dayIndex+1)%plan.length;active=null;save();renderHome();renderHistory();renderRecords();show("home",document.querySelectorAll("nav button")[0])}
+function cancel(){if(confirm("Training abbrechen?")){active=null;show("home",document.querySelectorAll("nav button")[0])}}
+function renderHistory(){historyList.innerHTML=history.length?"":"Noch keine Trainings gespeichert.";[...history].reverse().forEach(w=>{let d=document.createElement("div");d.className="history";d.innerHTML='<div class="between"><b>'+plan[w.dayIndex].name+'</b><span class="muted">'+new Date(w.date).toLocaleDateString("de-DE")+'</span></div><div class="muted">'+w.exercises.map(e=>e.name).join(" · ")+'</div>';historyList.appendChild(d)})}
+function renderRecords(){let rec={};history.forEach(w=>w.exercises.forEach(e=>e.doneSets.forEach(s=>{let kg=parseFloat(String(s.kg).replace(",",".")),r=parseInt(s.reps);if(!isNaN(kg)&&!isNaN(r)){let score=kg*(1+r/30);if(!rec[e.name]||score>rec[e.name].score)rec[e.name]={kg,reps:r,score}}})));recordsList.innerHTML=Object.keys(rec).length?"":"Noch keine Rekorde.";Object.entries(rec).forEach(([n,r])=>{let d=document.createElement("div");d.className="history";d.innerHTML='<div class="between"><b>'+n+'</b><span>'+r.kg+' kg × '+r.reps+'</span></div>';recordsList.appendChild(d)})}
+function show(id,b){["home","workout","history","records"].forEach(x=>document.getElementById(x).classList.add("hidden"));document.getElementById(id).classList.remove("hidden");document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));b.classList.add("active");if(id==="workout")renderWorkout();if(id==="history")renderHistory();if(id==="records")renderRecords()}
+function resetPlan(){if(confirm("Plan zurücksetzen?")){plan=defaults;save();renderHome()}}
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+renderHome();renderHistory();renderRecords();
+</script></body></html>
