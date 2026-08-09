@@ -3,7 +3,7 @@
 window.MCD_OFFICIAL={
   mains:[
     {name:'20 Garlic Pepper Chicken McNuggets',type:'Nuggets',source:'McDonald’s Deutschland',today:true,verified:true,g:380,k:969,p:55,c:77,f:49,b:1.9,s:7.3},
-    {name:'20 Chicken McNuggets®',type:'Nuggets',source:'McDonald’s Deutschland'},
+    {name:'20 Chicken McNuggets®',type:'Nuggets',source:'McDonald’s Deutschland',verified:true,g:363,k:892,p:54,c:60,f:47,b:4.1,s:3.7},
     {name:'9 Chicken McNuggets®',type:'Nuggets',source:'McDonald’s Deutschland'},
     {name:'6 Chicken McNuggets®',type:'Nuggets',source:'McDonald’s Deutschland'},
     {name:'Double Cheeseburger',type:'Burger',source:'McDonald’s Deutschland',today:true},
