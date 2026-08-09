@@ -6,7 +6,7 @@ window.MCD_OFFICIAL={
     {name:'20 Chicken McNuggets®',type:'Nuggets',source:'McDonald’s Deutschland',verified:true,g:363,k:892,p:54,c:60,f:47,b:4.1,s:3.7},
     {name:'9 Chicken McNuggets®',type:'Nuggets',source:'McDonald’s Deutschland'},
     {name:'6 Chicken McNuggets®',type:'Nuggets',source:'McDonald’s Deutschland'},
-    {name:'Double Cheeseburger',type:'Burger',source:'McDonald’s Deutschland',today:true},
+    {name:'Double Cheeseburger',type:'Burger',source:'McDonald’s Deutschland',today:true,verified:true,g:179,k:460,p:27,c:31,f:25,b:2.4,s:2.4},
     {name:'McWrap® Chicken Greek-Style',type:'Wrap',source:'McDonald’s Deutschland'},
     {name:'McWrap® Chicken Honig-Senf',type:'Wrap',source:'McDonald’s Deutschland'},
     {name:'McWrap® Chicken Creamy Chipotle',type:'Wrap',source:'McDonald’s Deutschland'},
