@@ -20,7 +20,7 @@ window.MCD_OFFICIAL={
   ],
   sauces:[
     {name:'Curry Sauce',portion:'25 ml'},
-    {name:'Süßsauer Sauce',portion:'25 ml',today:true},
+    {name:'Süßsauer Sauce',portion:'30 g',today:true,verified:true,g:30,k:49,p:0.1,c:11,f:0.3,b:0.4,s:0.31},
     {name:'Barbecue Sauce',portion:'25 ml'},
     {name:'Senf Sauce',portion:'25 ml'},
     {name:'Balsamico Dressing',portion:'30 ml',today:true,verified:true,g:30,k:22.5,p:0.06,c:3.24,f:0.84,b:0,s:0.57},
