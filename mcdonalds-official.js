@@ -30,6 +30,25 @@ window.MCD_OFFICIAL={
   ]
 };
 
+// Ziele aus "90 Tage Challenge.xlsx".
+// Eingaben: 88,8 kg, 1,88 m, 40 Jahre, Aktivitätsfaktor 1,5, Defizitfaktor 0,8.
+// Tabellenlogik: Idealgewicht = Größe*100-100; Protein = Idealgewicht*2,4;
+// Fett = 25 % der Zielkalorien / 9,3; Kohlenhydrate = Restkalorien / 4,1.
+window.CHALLENGE_GOALS={
+  calories:2472.614928,
+  protein:211.2,
+  fat:66.4681432258065,
+  carbs:241.107608780488,
+  basal:2060.51244,
+  maintenance:3090.76866,
+  weight:88.8,
+  height:1.88,
+  age:40,
+  activity:1.5,
+  deficit:0.8,
+  idealWeight:88
+};
+
 // Die Hauptseite hatte bisher eine alte McDonald's-Anzeige, die verified-Werte ignoriert hat.
 // Nach dem Laden ersetzen wir diese Anzeige und machen verifizierte Produkte direkt eintragbar.
 window.addEventListener('load',()=>{
@@ -46,4 +65,36 @@ window.addEventListener('load',()=>{
     const card=(x,group,i)=>`<div class="mcdItem"><b>${x.name}</b><div class="muted">${x.type||('Portion: '+x.portion)}${x.source?' · '+x.source:''}</div>${x.verified?`<span class="tag">Offizielle Nährwerte</span><div class="ok" style="margin-top:7px"><b>${Math.round(x.k)} kcal · ${(+x.p).toFixed(1)} g Eiweiß</b></div><div class="muted">${(+x.c).toFixed(1)} g KH · ${(+x.f).toFixed(1)} g Fett · ${(+x.b||0).toFixed(1)} g Ballaststoffe · ${(+x.g).toFixed(0)} g Portion</div><button class="btn green" style="margin-top:9px" onclick="addMcDItem('${group}',${i})">Eintragen</button>`:`<span class="tag">Offiziell gelistet</span><div class="warn" style="margin-top:6px">Nährwerte noch nicht hinterlegt</div>`}</div>`;
     eatList.innerHTML=`<h3>McDonald's Deutschland</h3><p class="muted">Verifizierte Produkte zeigen die offiziellen Portionswerte und können direkt eingetragen werden.</p><h4>Produkte</h4>${cat.mains.map((x,i)=>card(x,'mains',i)).join('')}<h4 style="margin-top:18px">Saucen & Dressings</h4>${cat.sauces.map((x,i)=>card(x,'sauces',i)).join('')}`;
   };
+
+  const g=window.CHALLENGE_GOALS;
+  const calorieLabel=document.querySelector('#dk + .muted');
+  const proteinLabel=document.querySelector('#dp + .muted');
+  if(calorieLabel)calorieLabel.textContent='von '+Math.round(g.calories);
+  if(proteinLabel)proteinLabel.textContent='Ziel '+Math.round(g.protein)+' g';
+  const dcBox=document.getElementById('dc')?.parentElement;
+  const dfBox=document.getElementById('df')?.parentElement;
+  if(dcBox&&!dcBox.querySelector('.challengeTarget'))dcBox.insertAdjacentHTML('beforeend',`<span class="muted challengeTarget">Ziel ${Math.round(g.carbs)} g</span>`);
+  if(dfBox&&!dfBox.querySelector('.challengeTarget'))dfBox.insertAdjacentHTML('beforeend',`<span class="muted challengeTarget">Ziel ${g.fat.toFixed(1)} g</span>`);
+
+  const originalRender=window.render;
+  window.render=function(){
+    originalRender();
+    const t=total();
+    if(window.bk)bk.style.width=Math.min(100,t.k/g.calories*100)+'%';
+    if(window.bp)bp.style.width=Math.min(100,t.p/g.protein*100)+'%';
+  };
+
+  window.updateRemaining=function(){
+    const t=total();
+    remaining.innerHTML=`<div class="grid"><div class="metric"><span class="muted">Noch frei</span><b>${Math.max(0,Math.round(g.calories-t.k))} kcal</b></div><div class="metric"><span class="muted">Eiweiß offen</span><b>${Math.max(0,Math.round(g.protein-t.p))} g</b></div><div class="metric"><span class="muted">KH offen</span><b>${Math.max(0,Math.round(g.carbs-t.c))} g</b></div><div class="metric"><span class="muted">Fett offen</span><b>${Math.max(0,(g.fat-t.f)).toFixed(0)} g</b></div></div>`;
+  };
+
+  window.showHome=function(){
+    updateRemaining();
+    const t=total(),rk=Math.max(0,g.calories-t.k),rp=Math.max(0,g.protein-t.p);
+    const list=HOME.map((x,i)=>({...x,i,score:(x.k<=rk?100:0)+Math.min(x.p,rp)*2})).sort((a,b)=>b.score-a.score);
+    eatList.innerHTML='<h3>Zu Hause</h3>'+list.map((x,j)=>`<div class="suggestion"><b>${j===0?'Beste Wahl: ':''}${x.name}</b><div>${x.k} kcal · ${x.p} g Eiweiß</div><button class="btn green" style="margin-top:8px" onclick="addFixed(HOME[${x.i}])">Eintragen</button></div>`).join('');
+  };
+
+  render();
 });
