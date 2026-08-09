@@ -7,15 +7,16 @@ window.MCD_OFFICIAL={
     {name:'9 Chicken McNuggets®',type:'Nuggets',source:'McDonald’s Deutschland'},
     {name:'6 Chicken McNuggets®',type:'Nuggets',source:'McDonald’s Deutschland'},
     {name:'Double Cheeseburger',type:'Burger',source:'McDonald’s Deutschland',today:true,verified:true,g:179,k:460,p:27,c:31,f:25,b:2.4,s:2.4},
+    {name:'Big Tasty® Bacon',type:'Burger',source:'McDonald’s Deutschland',verified:true,g:359,k:912,p:49,c:51,f:57,b:2.4,s:4.0},
     {name:'McWrap® Chicken Greek-Style',type:'Wrap',source:'McDonald’s Deutschland'},
     {name:'McWrap® Chicken Honig-Senf',type:'Wrap',source:'McDonald’s Deutschland'},
     {name:'McWrap® Chicken Creamy Chipotle',type:'Wrap',source:'McDonald’s Deutschland'},
     {name:'McWrap® Veggie Greek-Style',type:'Wrap',source:'McDonald’s Deutschland'},
     {name:'McWrap® Veggie Honig-Senf',type:'Wrap',source:'McDonald’s Deutschland'},
     {name:'McWrap® Veggie Creamy Chipotle',type:'Wrap',source:'McDonald’s Deutschland'},
-    {name:'Big Chicken Salad',type:'Salat',source:'McDonald’s Deutschland',today:true},
+    {name:'Big Chicken Salad',type:'Salat',source:'McDonald’s Deutschland',today:true,verified:true,g:271,k:280,p:14,c:19,f:15,b:4.5,s:1.1},
     {name:'Big Veggie Salad',type:'Salat',source:'McDonald’s Deutschland'},
-    {name:'Snack Salad',type:'Salat',source:'McDonald’s Deutschland',today:true}
+    {name:'Snack Salad',type:'Salat',source:'McDonald’s Deutschland',today:true,verified:true,g:124,k:21,p:1.1,c:3.1,f:0.2,b:1.2,s:0.03}
   ],
   sauces:[
     {name:'Curry Sauce',portion:'25 ml'},
