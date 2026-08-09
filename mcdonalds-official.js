@@ -29,3 +29,21 @@ window.MCD_OFFICIAL={
     {name:'Spicy Bali Style Sauce',portion:'29 g',today:true,verified:true,g:29,k:43,p:0.4,c:8.4,f:0.6,b:0.3,s:0.64}
   ]
 };
+
+// Die Hauptseite hatte bisher eine alte McDonald's-Anzeige, die verified-Werte ignoriert hat.
+// Nach dem Laden ersetzen wir diese Anzeige und machen verifizierte Produkte direkt eintragbar.
+window.addEventListener('load',()=>{
+  window.addMcDItem=function(group,index){
+    const cat=window.MCD_OFFICIAL||{mains:[],sauces:[]};
+    const x=(cat[group]||[])[index];
+    if(!x||!x.verified)return;
+    foods.push({id:Date.now(),name:x.name,g:x.g,k:x.k,p:x.p,c:x.c,f:x.f,b:x.b||0,s:x.s||0});
+    save();render();updateRemaining();showMcD();
+  };
+  window.showMcD=function(){
+    updateRemaining();
+    const cat=window.MCD_OFFICIAL||{mains:[],sauces:[]};
+    const card=(x,group,i)=>`<div class="mcdItem"><b>${x.name}</b><div class="muted">${x.type||('Portion: '+x.portion)}${x.source?' · '+x.source:''}</div>${x.verified?`<span class="tag">Offizielle Nährwerte</span><div class="ok" style="margin-top:7px"><b>${Math.round(x.k)} kcal · ${(+x.p).toFixed(1)} g Eiweiß</b></div><div class="muted">${(+x.c).toFixed(1)} g KH · ${(+x.f).toFixed(1)} g Fett · ${(+x.b||0).toFixed(1)} g Ballaststoffe · ${(+x.g).toFixed(0)} g Portion</div><button class="btn green" style="margin-top:9px" onclick="addMcDItem('${group}',${i})">Eintragen</button>`:`<span class="tag">Offiziell gelistet</span><div class="warn" style="margin-top:6px">Nährwerte noch nicht hinterlegt</div>`}</div>`;
+    eatList.innerHTML=`<h3>McDonald's Deutschland</h3><p class="muted">Verifizierte Produkte zeigen die offiziellen Portionswerte und können direkt eingetragen werden.</p><h4>Produkte</h4>${cat.mains.map((x,i)=>card(x,'mains',i)).join('')}<h4 style="margin-top:18px">Saucen & Dressings</h4>${cat.sauces.map((x,i)=>card(x,'sauces',i)).join('')}`;
+  };
+});
