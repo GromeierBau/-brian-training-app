@@ -26,6 +26,6 @@ window.MCD_OFFICIAL={
     {name:'Balsamico Dressing',portion:'30 ml',today:true,verified:true,g:30,k:22.5,p:0.06,c:3.24,f:0.84,b:0,s:0.57},
     {name:'Honig-Senf Dressing',portion:'50 ml'},
     {name:'Sour Cream-Schnittlauch Dip',portion:'25 ml',today:true},
-    {name:'Spicy Bali Dip',portion:'1 Portion',today:true}
+    {name:'Spicy Bali Style Sauce',portion:'29 g',today:true,verified:true,g:29,k:43,p:0.4,c:8.4,f:0.6,b:0.3,s:0.64}
   ]
 };
