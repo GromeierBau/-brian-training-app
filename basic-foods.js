@@ -19,7 +19,7 @@ window.BASIC_FOODS=[
 {name:'Reis, gekocht',aliases:['reis','reis gekocht'],k:130,p:2.7,c:28.2,f:.3,b:.4,s:0},
 {name:'Haferflocken',aliases:['haferflocken','hafer'],k:372,p:13.5,c:58.7,f:7,b:10,s:.01}
 ];
-window.addEventListener('load',()=>{
+(function initBasicFoods(){
   const clean=s=>String(s||'').toLowerCase().trim();
   const basicMatches=q=>{const x=clean(q);return (window.BASIC_FOODS||[]).filter(f=>f.aliases.some(a=>clean(a)===x)||f.aliases.some(a=>clean(a).includes(x)||x.includes(clean(a))));};
   window.searchFood=async function(){
@@ -34,5 +34,5 @@ window.addEventListener('load',()=>{
     const seen=new Set();window.results=[...basic,...own,...ext].filter(x=>{const k=clean(x.name);if(seen.has(k))return false;seen.add(k);return true}).slice(0,12);
     sr.innerHTML=window.results.length?window.results.map((x,i)=>`<div class="suggestion"><b>${x.name}</b><div>${Math.round(x.k)} kcal · ${(+x.p||0).toFixed(1)} g Eiweiß · ${(+x.c||0).toFixed(1)} g KH · ${(+x.f||0).toFixed(1)} g Fett /100 g</div><button class="btn ${i<basic.length?'green':''}" onclick="addProduct(${i})">Auswählen</button></div>`).join(''):'<p class="muted">Kein passendes Lebensmittel gefunden.</p>';
   };
-  if(!document.querySelector('script[data-weight-editor]')){const s=document.createElement('script');s.src='weight-editor.js?v=20260811-1';s.dataset.weightEditor='1';document.head.appendChild(s);}
-});
+  if(!document.querySelector('script[data-weight-editor]')){const s=document.createElement('script');s.src='weight-editor.js?v=20260811-2';s.dataset.weightEditor='1';document.head.appendChild(s);}
+})();
