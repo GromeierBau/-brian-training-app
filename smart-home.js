@@ -1,4 +1,4 @@
-// Personal meal calculator + iPhone-safe barcode scanning.
+// Personal meal calculator + robust live barcode scanner.
 (function(){
  const n=v=>+v||0,EXCLUDE=/grüner helfer|lavita|vitamin|supplement|kreatin|creatin|öl$|sauce$|dressing$/i;let selected=[];
  function pool(){const map={};Object.entries(allFoods()).forEach(([date,items])=>(items||[]).forEach(x=>{if(!x||!x.name||n(x.g)<=1||EXCLUDE.test(x.name.trim()))return;const z=normalizeItem(x),id=z.name.trim().toLowerCase();if(!z.k)return;if(!map[id])map[id]={...z,count:0,last:'',grams:[]};map[id].count++;map[id].last=date>map[id].last?date:map[id].last;map[id].grams.push(n(x.g));}));return Object.values(map).map(x=>{x.grams.sort((a,b)=>a-b);x.usual=x.grams[Math.floor(x.grams.length/2)]||100;return x;}).sort((a,b)=>b.last.localeCompare(a.last)||b.count-a.count);}
@@ -11,28 +11,12 @@
  window.addCalculatedMeal=function(){const q=solve();if(!q)return;q.parts.forEach((p,i)=>foods.push({id:Date.now()+i,name:p.name,g:p.g,k:p.k,p:p.p,c:p.c,f:p.f,b:p.b,s:p.s}));save();selected=[];show('food')};
  window.showHome=function(){updateRemaining();const r=remainingNow(),items=pool();document.getElementById('eatList').innerHTML=`<h3>Stell dir dein Essen zusammen</h3><p class="muted">Wähle aus, was du essen möchtest. Die App berechnet die passenden Gramm-Mengen.</p><div class="suggestion"><b>Lebensmittel auswählen</b><div style="display:grid;gap:7px;max-height:330px;overflow:auto;margin-top:9px">${items.slice(0,35).map(x=>{const id=x.name.toLowerCase(),on=selected.includes(id);return `<button class="btn ${on?'green':'gray'}" style="text-align:left" onclick="toggleMealFood('${encodeURIComponent(id)}')">${on?'✓ ':''}${x.name}<span style="display:block;font-size:11px;opacity:.75">zuletzt ${x.last} · ${x.count}× verwendet</span></button>`}).join('')}</div></div><div id="mealCalc"></div><p class="muted">Noch offen: ${Math.round(r.k)} kcal · ${Math.round(r.p)} g Eiweiß · ${Math.round(r.c)} g KH · ${Math.round(r.f)} g Fett · ${r.b.toFixed(1)} g Ballaststoffe</p>`;renderCalc()};
 
- // No live camera on iPhone: use the native camera/photo picker and decode the captured image.
- window.openScan=function(){
-   show('scan');scanLocked=false;scannedProduct=null;
-   const reader=document.getElementById('reader'),out=document.getElementById('br');
-   reader.className='';reader.style.cssText='height:auto;background:transparent;border-radius:0;overflow:visible';
-   reader.innerHTML='<div class="suggestion" style="margin:0"><b>Barcode fotografieren</b><p class="muted">Kamera öffnen und den Barcode möglichst groß und scharf fotografieren.</p><label class="btn green wide" style="display:block;text-align:center">Kamera öffnen<input id="barcodePhoto" type="file" accept="image/*" capture="environment" style="position:absolute;left:-9999px" onchange="scanBarcodePhoto(this)"></label></div>';
-   out.innerHTML='';
+ window.openScan=async function(){
+   show('scan');scanLocked=false;scannedProduct=null;const reader=document.getElementById('reader'),out=document.getElementById('br');out.innerHTML='<p class="muted">Kamera wird gestartet…</p>';reader.className='scanbox';reader.style.cssText='';reader.innerHTML='';
+   try{await stopCamera();if(typeof Html5Qrcode==='undefined')throw new Error('Scanner-Bibliothek fehlt');scanner=new Html5Qrcode('reader');await scanner.start({facingMode:'environment'},{fps:10,qrbox:{width:260,height:120},disableFlip:false},async code=>{if(scanLocked)return;scanLocked=true;out.innerHTML='<p class="muted">Barcode erkannt…</p>';await stopCamera();await window.lookup(code)},()=>{});out.innerHTML='<p class="good">Kamera aktiv. Barcode in den Rahmen halten.</p>'}
+   catch(e){try{await stopCamera()}catch(_){}reader.className='';reader.style.cssText='height:auto;background:transparent';reader.innerHTML='<div class="suggestion" style="margin:0"><b>Kamera konnte nicht live gestartet werden</b><label class="btn green wide" style="display:block;text-align:center;margin-top:10px">Barcode fotografieren<input type="file" accept="image/*" capture="environment" style="position:absolute;left:-9999px" onchange="scanBarcodePhoto(this)"></label></div>';out.innerHTML='<p class="mid">Alternativ Barcode fotografieren oder manuell eingeben.</p>'}
  };
- window.scanBarcodePhoto=async function(input){
-   const file=input.files&&input.files[0],out=document.getElementById('br');if(!file)return;
-   out.innerHTML='<p class="muted">Barcode wird gelesen…</p>';
-   try{
-     if(typeof Html5Qrcode==='undefined')throw new Error('Scanner nicht geladen');
-     let temp=document.getElementById('barcodeDecodeTarget');if(temp)temp.remove();
-     temp=document.createElement('div');temp.id='barcodeDecodeTarget';temp.style.display='none';document.body.appendChild(temp);
-     const q=new Html5Qrcode('barcodeDecodeTarget');const code=await q.scanFile(file,false);try{q.clear()}catch(e){}temp.remove();await window.lookup(code);
-   }catch(e){out.innerHTML='<p class="mid">Barcode nicht erkannt. Bitte noch einmal näher und scharf fotografieren oder unten manuell eingeben.</p>';input.value=''}
- };
- window.lookup=async function(code){
-   code=String(code||'').trim();if(!code)return;const out=document.getElementById('br');out.innerHTML='<p class="muted">Produkt wird gesucht…</p>';
-   try{const r=await fetch('https://world.openfoodfacts.org/api/v2/product/'+encodeURIComponent(code)+'.json'),d=await r.json();if(!d.product)throw new Error();const p=d.product,u=p.nutriments||{};scannedProduct={name:p.product_name_de||p.product_name||'Produkt',k:+u['energy-kcal_100g']||0,p:+u.proteins_100g||0,c:+u.carbohydrates_100g||0,f:+u.fat_100g||0,b:+u.fiber_100g||0,s:+u.salt_100g||0};out.innerHTML=`<div class="suggestion"><b>${scannedProduct.name}</b><div class="muted">pro 100 g: ${Math.round(scannedProduct.k)} kcal · ${scannedProduct.p.toFixed(1)} g Eiweiß · ${scannedProduct.c.toFixed(1)} g KH · ${scannedProduct.f.toFixed(1)} g Fett</div><label>Menge g<input id="scanGrams" type="number" value="100"></label><button class="btn green" onclick="addScanned()">Hinzufügen</button></div>`}catch(e){out.innerHTML='<p class="mid">Produkt nicht gefunden.</p>'}
- };
-
+ window.scanBarcodePhoto=async function(input){const file=input.files&&input.files[0],out=document.getElementById('br');if(!file)return;out.innerHTML='<p class="muted">Barcode wird gelesen…</p>';try{let temp=document.getElementById('barcodeDecodeTarget');if(temp)temp.remove();temp=document.createElement('div');temp.id='barcodeDecodeTarget';document.body.appendChild(temp);const q=new Html5Qrcode('barcodeDecodeTarget');const code=await q.scanFile(file,false);try{q.clear()}catch(e){}temp.remove();await window.lookup(code)}catch(e){out.innerHTML='<p class="mid">Barcode nicht erkannt. Bitte näher und scharf fotografieren.</p>';input.value=''}};
+ window.lookup=async function(code){code=String(code||'').trim();if(!code)return;const out=document.getElementById('br');out.innerHTML='<p class="muted">Produkt wird gesucht…</p>';try{const r=await fetch('https://world.openfoodfacts.org/api/v2/product/'+encodeURIComponent(code)+'.json'),d=await r.json();if(!d.product)throw new Error();const p=d.product,u=p.nutriments||{};scannedProduct={name:p.product_name_de||p.product_name||'Produkt',k:+u['energy-kcal_100g']||0,p:+u.proteins_100g||0,c:+u.carbohydrates_100g||0,f:+u.fat_100g||0,b:+u.fiber_100g||0,s:+u.salt_100g||0};out.innerHTML=`<div class="suggestion"><b>${scannedProduct.name}</b><div class="muted">pro 100 g: ${Math.round(scannedProduct.k)} kcal · ${scannedProduct.p.toFixed(1)} g Eiweiß · ${scannedProduct.c.toFixed(1)} g KH · ${scannedProduct.f.toFixed(1)} g Fett</div><label>Menge g<input id="scanGrams" type="number" value="100"></label><button class="btn green" onclick="addScanned()">Hinzufügen</button></div>`}catch(e){out.innerHTML='<p class="mid">Produkt nicht gefunden.</p>'}};
  const basic=document.createElement('script');basic.src='basic-foods.js?v=20260811-3';document.head.appendChild(basic);
 })();
