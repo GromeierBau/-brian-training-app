@@ -34,4 +34,5 @@ window.addEventListener('load',()=>{
     const seen=new Set();window.results=[...basic,...own,...ext].filter(x=>{const k=clean(x.name);if(seen.has(k))return false;seen.add(k);return true}).slice(0,12);
     sr.innerHTML=window.results.length?window.results.map((x,i)=>`<div class="suggestion"><b>${x.name}</b><div>${Math.round(x.k)} kcal · ${(+x.p||0).toFixed(1)} g Eiweiß · ${(+x.c||0).toFixed(1)} g KH · ${(+x.f||0).toFixed(1)} g Fett /100 g</div><button class="btn ${i<basic.length?'green':''}" onclick="addProduct(${i})">Auswählen</button></div>`).join(''):'<p class="muted">Kein passendes Lebensmittel gefunden.</p>';
   };
+  if(!document.querySelector('script[data-weight-editor]')){const s=document.createElement('script');s.src='weight-editor.js?v=20260811-1';s.dataset.weightEditor='1';document.head.appendChild(s);}
 });
