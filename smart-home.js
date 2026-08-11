@@ -12,5 +12,33 @@
  window.toggleMealFood=function(id){id=decodeURIComponent(id);const i=selected.indexOf(id);if(i>=0)selected.splice(i,1);else selected.push(id);showHome();};
  window.addCalculatedMeal=function(){const q=solve();if(!q)return;q.parts.forEach((p,i)=>foods.push({id:Date.now()+i,name:p.name,g:p.g,k:p.k,p:p.p,c:p.c,f:p.f,b:p.b,s:p.s}));save();selected=[];show('food');};
  window.showHome=function(){updateRemaining();const r=remaining(),items=pool();let html=`<h3>Stell dir dein Essen zusammen</h3><p class="muted">Wähle einfach aus, was du heute essen möchtest. Danach berechnet die App die passenden Gramm-Mengen für deinen heutigen Rest.</p><div class="suggestion"><b>Lebensmittel auswählen</b><div class="muted" style="margin:5px 0 9px">Zuletzt verwendete Lebensmittel stehen oben.</div><div style="display:grid;gap:7px;max-height:330px;overflow:auto">${items.slice(0,35).map(x=>{const id=x.name.toLowerCase(),on=selected.includes(id);return `<button class="btn ${on?'green':'gray'}" style="text-align:left" onclick="toggleMealFood('${encodeURIComponent(id)}')">${on?'✓ ':''}${x.name}<span style="display:block;font-size:11px;opacity:.75">zuletzt ${x.last||'früher'} · ${x.count}× verwendet</span></button>`}).join('')}</div></div><div id="mealCalc"></div><p class="muted">Noch offen: ${Math.round(r.k)} kcal · ${Math.round(r.p)} g Eiweiß · ${Math.round(r.c)} g KH · ${Math.round(r.f)} g Fett · ${r.b.toFixed(1)} g Ballaststoffe</p>`;eatList.innerHTML=html;renderCalc();};
+
+ // iPhone/Safari: keep camera setup deliberately simple. Specific device/focus constraints can make WebKit reject the stream.
+ window.openScan=async function(){
+  show('scan');br.innerHTML='<p class="muted">Kamera wird gestartet…</p>';scanLocked=false;
+  try{await stopCamera();}catch(e){}
+  if(typeof Html5Qrcode==='undefined'){br.innerHTML='<p class="mid">Scanner konnte nicht geladen werden. Bitte Seite neu laden.</p>';return;}
+  scanner=new Html5Qrcode('reader');
+  const onCode=async code=>{if(scanLocked)return;scanLocked=true;try{await stopCamera();}catch(e){}lookup(code);};
+  const config={fps:10,qrbox:{width:280,height:140}};
+  try{
+   await scanner.start({facingMode:'environment'},config,onCode,()=>{});
+   br.innerHTML='<p class="muted">Barcode vor die Rückkamera halten.</p>';
+  }catch(e){
+   try{
+    const cams=await Html5Qrcode.getCameras();
+    const rear=(cams||[]).slice().reverse().find(c=>/back|rear|rück|ruck|hinten|environment/i.test(c.label))||(cams||[]).slice().reverse()[0];
+    if(!rear)throw e;
+    try{await scanner.clear();}catch(_){}
+    scanner=new Html5Qrcode('reader');
+    await scanner.start(rear.id,config,onCode,()=>{});
+    br.innerHTML='<p class="muted">Barcode vor die Rückkamera halten.</p>';
+   }catch(e2){
+    try{await stopCamera();}catch(_){}
+    br.innerHTML='<p class="mid">Kamera konnte nicht gestartet werden. Prüfe auf dem iPhone unter Einstellungen → Safari → Kamera, ob der Zugriff erlaubt ist. Du kannst den Barcode unten auch manuell eingeben.</p>';
+   }
+  }
+ };
+
  const basic=document.createElement('script');basic.src='basic-foods.js?v=20260811-1';document.head.appendChild(basic);
 })();
