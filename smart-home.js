@@ -13,32 +13,37 @@
  window.addCalculatedMeal=function(){const q=solve();if(!q)return;q.parts.forEach((p,i)=>foods.push({id:Date.now()+i,name:p.name,g:p.g,k:p.k,p:p.p,c:p.c,f:p.f,b:p.b,s:p.s}));save();selected=[];show('food');};
  window.showHome=function(){updateRemaining();const r=remaining(),items=pool();let html=`<h3>Stell dir dein Essen zusammen</h3><p class="muted">Wähle einfach aus, was du heute essen möchtest. Danach berechnet die App die passenden Gramm-Mengen für deinen heutigen Rest.</p><div class="suggestion"><b>Lebensmittel auswählen</b><div class="muted" style="margin:5px 0 9px">Zuletzt verwendete Lebensmittel stehen oben.</div><div style="display:grid;gap:7px;max-height:330px;overflow:auto">${items.slice(0,35).map(x=>{const id=x.name.toLowerCase(),on=selected.includes(id);return `<button class="btn ${on?'green':'gray'}" style="text-align:left" onclick="toggleMealFood('${encodeURIComponent(id)}')">${on?'✓ ':''}${x.name}<span style="display:block;font-size:11px;opacity:.75">zuletzt ${x.last||'früher'} · ${x.count}× verwendet</span></button>`}).join('')}</div></div><div id="mealCalc"></div><p class="muted">Noch offen: ${Math.round(r.k)} kcal · ${Math.round(r.p)} g Eiweiß · ${Math.round(r.c)} g KH · ${Math.round(r.f)} g Fett · ${r.b.toFixed(1)} g Ballaststoffe</p>`;eatList.innerHTML=html;renderCalc();};
 
- // iPhone/Safari: keep camera setup deliberately simple. Specific device/focus constraints can make WebKit reject the stream.
+ // Scanner override: user gesture starts camera, Safari-friendly constraints, complete macros retained.
+ let scanStarting=false;
+ function scanStatus(html,kind){const e=document.getElementById('scanStatus2');if(e){e.className=kind||'muted';e.innerHTML=html;}}
+ async function hardStop(){try{await stopCamera();}catch(e){}document.querySelectorAll('#reader video').forEach(v=>{try{if(v.srcObject)v.srcObject.getTracks().forEach(t=>t.stop());}catch(e){}});scanner=null;}
  window.openScan=async function(){
-  show('scan');br.innerHTML='<p class="muted">Kamera wird gestartet…</p>';scanLocked=false;
-  try{await stopCamera();}catch(e){}
-  if(typeof Html5Qrcode==='undefined'){br.innerHTML='<p class="mid">Scanner konnte nicht geladen werden. Bitte Seite neu laden.</p>';return;}
-  scanner=new Html5Qrcode('reader');
-  const onCode=async code=>{if(scanLocked)return;scanLocked=true;try{await stopCamera();}catch(e){}lookup(code);};
-  const config={fps:10,qrbox:{width:280,height:140}};
-  try{
-   await scanner.start({facingMode:'environment'},config,onCode,()=>{});
-   br.innerHTML='<p class="muted">Barcode vor die Rückkamera halten.</p>';
-  }catch(e){
-   try{
-    const cams=await Html5Qrcode.getCameras();
-    const rear=(cams||[]).slice().reverse().find(c=>/back|rear|rück|ruck|hinten|environment/i.test(c.label))||(cams||[]).slice().reverse()[0];
-    if(!rear)throw e;
-    try{await scanner.clear();}catch(_){}
-    scanner=new Html5Qrcode('reader');
-    await scanner.start(rear.id,config,onCode,()=>{});
-    br.innerHTML='<p class="muted">Barcode vor die Rückkamera halten.</p>';
-   }catch(e2){
-    try{await stopCamera();}catch(_){}
-    br.innerHTML='<p class="mid">Kamera konnte nicht gestartet werden. Prüfe auf dem iPhone unter Einstellungen → Safari → Kamera, ob der Zugriff erlaubt ist. Du kannst den Barcode unten auch manuell eingeben.</p>';
-   }
-  }
+  show('scan');scanLocked=false;scannedProduct=null;
+  try{await hardStop();}catch(e){}
+  const reader=document.getElementById('reader');if(reader)reader.innerHTML='';
+  br.innerHTML='<div id="scanStatus2" class="muted" style="padding:10px 0">Tippe auf „Kamera starten“. Beim ersten Mal fragt Safari nach der Kamerafreigabe.</div><button id="scanStart2" class="btn green wide" onclick="startBarcodeCamera()">Kamera starten</button>';
  };
+ window.startBarcodeCamera=async function(){
+  if(scanStarting)return;scanStarting=true;const btn=document.getElementById('scanStart2');if(btn)btn.disabled=true;scanStatus('Kamera wird gestartet…');
+  try{
+   await hardStop();
+   if(!window.isSecureContext)throw new Error('Die Kamera benötigt eine HTTPS-Verbindung.');
+   if(typeof Html5Qrcode==='undefined')throw new Error('Scanner-Bibliothek wurde nicht geladen.');
+   scanner=new Html5Qrcode('reader');
+   const done=async code=>{if(scanLocked)return;scanLocked=true;scanStatus('Barcode erkannt: '+code,'good');await hardStop();lookup(code);};
+   const cfg={fps:10,qrbox:{width:280,height:130},aspectRatio:1.333333};
+   try{await scanner.start({facingMode:{exact:'environment'}},cfg,done,()=>{});}catch(first){
+    await hardStop();scanner=new Html5Qrcode('reader');
+    try{await scanner.start({facingMode:'environment'},cfg,done,()=>{});}catch(second){
+     await hardStop();const cams=await Html5Qrcode.getCameras();const rear=(cams||[]).find(c=>/back|rear|rück|ruck|hinten|environment|wide/i.test(c.label))||(cams||[]).slice().reverse()[0];if(!rear)throw second;scanner=new Html5Qrcode('reader');await scanner.start(rear.id,cfg,done,()=>{});
+    }
+   }
+   scanStatus('Kamera aktiv. Barcode ruhig in den Rahmen halten.','good');if(btn)btn.style.display='none';
+  }catch(e){scanLocked=false;scanStatus('Kamera konnte nicht gestartet werden. Prüfe auf dem iPhone für diese Website die Kamerafreigabe. Der Barcode kann unten weiterhin manuell eingegeben werden.','mid');if(btn){btn.disabled=false;btn.style.display='block';}}
+  finally{scanStarting=false;if(btn)btn.disabled=false;}
+ };
+ const originalLookup=window.lookup;
+ window.lookup=async function(code){if(!code)return;await hardStop();br.innerHTML='<p class="muted">Produkt wird gesucht…</p>';try{let r=await fetch('https://world.openfoodfacts.org/api/v2/product/'+encodeURIComponent(code)+'.json'),d=await r.json();if(!d.product)throw new Error('Produkt nicht gefunden');let p=d.product,nut=p.nutriments||{};scannedProduct={name:p.product_name_de||p.product_name||'Produkt',k:+nut['energy-kcal_100g']||0,p:+nut.proteins_100g||0,c:+nut.carbohydrates_100g||0,f:+nut.fat_100g||0,b:+nut.fiber_100g||0,s:+nut.salt_100g||0};br.innerHTML=`<div class="suggestion"><b>${scannedProduct.name}</b><div class="muted">pro 100 g: ${Math.round(scannedProduct.k)} kcal · ${scannedProduct.p.toFixed(1)} g Eiweiß · ${scannedProduct.c.toFixed(1)} g KH · ${scannedProduct.f.toFixed(1)} g Fett · ${scannedProduct.b.toFixed(1)} g Ballaststoffe</div><label>Menge g<input id="scanGrams" type="number" value="100"></label><button class="btn green" onclick="addScanned()">Hinzufügen</button></div>`;}catch(e){br.innerHTML='<p class="mid">Produkt nicht gefunden. Du kannst es unter Ernährung manuell eintragen.</p>';scanLocked=false;}};
 
  const basic=document.createElement('script');basic.src='basic-foods.js?v=20260811-1';document.head.appendChild(basic);
 })();
