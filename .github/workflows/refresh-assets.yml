@@ -1,0 +1,24 @@
+name: Refresh app assets
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bump asset version once
+        run: |
+          if grep -q 'mcdonalds-official.js?v=20260811-2014' index.html; then
+            sed -i 's/mcdonalds-official.js?v=20260811-2014/mcdonalds-official.js?v=20260811-2136/' index.html
+          fi
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet && exit 0
+          git commit -m "Refresh Safari app assets"
+          git push
